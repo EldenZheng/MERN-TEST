@@ -16,16 +16,29 @@ export default function Users(){
         .catch(err=>console.log(err))
     },[])
 
-    useEffect(() => {
+    // OLD STORE PATH IN MONGO
+    // useEffect(() => {
+    //     axios.get('http://localhost:3001/get-profile-picture/'+userData.email)
+    //       .then((response) => {
+    //         setProfilePicture(response.data.profilePicture);
+    //         console.log(response.data)
+    //       })
+    //       .catch((error) => {
+    //         console.error('Error fetching profile picture:', error);
+    //       });
+    //   }, []);
+
+      useEffect(() => {
         axios.get('http://localhost:3001/get-profile-picture/'+userData.email)
-          .then((response) => {
-            setProfilePicture(response.data.profilePicture);
-            console.log(response.data)
-          })
-          .catch((error) => {
+        .then((response) => {
+            // Set the profile picture to the Base64 string
+            setProfilePicture("data:image/jpeg;base64," + response.data);
+        })
+        .catch((error) => {
             console.error('Error fetching profile picture:', error);
-          });
-      }, []);
+        });
+    }, []);
+    
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -112,7 +125,7 @@ export default function Users(){
                         {profilePicture ? (
                             <>
                                 <input type="file" accept=".jpg, .jpeg, .png" onChange={handleFileChange} />
-                                <button onClick={handleUpdate}>Change Profile Picture</button>
+                                <button onClick={handleUpload}>Change Profile Picture</button>
                             </>
                             
                         ) : (

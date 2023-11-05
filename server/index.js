@@ -19,27 +19,49 @@ const dbSignIn = mongoose.createConnection("mongodb://127.0.0.1:27017/employees"
 
 const employeeModel = dbSignIn.model('employees',EmployeeModel.schema)
 
-const storage = multer.diskStorage({
-    destination:(req,file,cb) =>{
-        const destinationPath = path.join(__dirname, '..', 'testcrud', 'uploads', 'profile-pictures');
-        cb(null, destinationPath);
-    },
-    filename: (req,file,cb)=>{
-        cb(null, Date.now()+'_'+file.originalname)
+// SAVING LOCALLY
+// const storage = multer.diskStorage({
+//     destination:(req,file,cb) =>{
+//         const destinationPath = path.join(__dirname, '..', 'testcrud', 'uploads', 'profile-pictures');
+//         cb(null, destinationPath);
+//     },
+//     filename: (req,file,cb)=>{
+//         cb(null, Date.now()+'_'+file.originalname)
+//     }
+// });
+// const upload = multer({storage:storage})
+
+//OLD STORE PATH IN MONGO
+// app.post('/upload-profile-picture/:id', upload.single('profilePicture'), (req, res) => {
+//     // Handle the file upload, save the path to the user's profilePicture field, and respond with success or error
+//     // Example: Update the user's profilePicture field in the database
+//     const userId = req.params.id;
+//     const profilePicturePath = 'uploads/profile-pictures/' + req.file.filename;
+//     employeeModel.findOneAndUpdate({email:userId}, { profilePicture: profilePicturePath })
+//     .then(users=>res.json(users))
+//     .catch(err=>res.json(err))
+// });
+
+const upload = multer();
+
+app.post('/upload-profile-picture/:id', upload.single('profilePicture'), (req, res) => {
+    const userId = req.params.id;
+    
+    // Check if a file was uploaded
+    if (req.file) {
+        // Convert the image file to a Base64 string
+        const profilePicture = req.file.buffer.toString('base64');
+
+        // Update the user's profilePicture field in the database
+        employeeModel.findOneAndUpdate({email:userId}, { profilePicture: profilePicture })
+        .then(users=>res.json(users))
+        .catch(err=>res.json(err))
+    } else {
+        console.error('No file uploaded');
+        res.status(400).json({ error: 'No file uploaded' });
     }
 });
 
-const upload = multer({storage:storage})
-
-app.post('/upload-profile-picture/:id', upload.single('profilePicture'), (req, res) => {
-    // Handle the file upload, save the path to the user's profilePicture field, and respond with success or error
-    // Example: Update the user's profilePicture field in the database
-    const userId = req.params.id;
-    const profilePicturePath = 'uploads/profile-pictures/' + req.file.filename;
-    employeeModel.findOneAndUpdate({email:userId}, { profilePicture: profilePicturePath })
-    .then(users=>res.json(users))
-    .catch(err=>res.json(err))
-});
 
 // app.post('/update-profile-picture/:id/:profile', upload.single('profilePicture'), (req, res) => {
 //     const userId = req.params.id;
@@ -95,12 +117,23 @@ app.get("/getUser/:id", (req, res) =>{
     .catch(err=>res.json(err))
 })
 
+// OLD STORE PATH IN MONGO
+// app.get("/get-profile-picture/:email", (req, res) =>{
+//     const email = req.params.email;
+//     employeeModel.findOne({email:email})
+//     .then(users=>res.json(users))
+//     .catch(err=>res.json(err))
+// })
+
 app.get("/get-profile-picture/:email", (req, res) =>{
     const email = req.params.email;
     employeeModel.findOne({email:email})
-    .then(users=>res.json(users))
-    .catch(err=>res.json(err))
-})
+    .then(user => {
+        // Send the Base64 string as a response
+        res.send(user.profilePicture);
+    })
+    .catch(err => res.status(500).json(err))
+});
 
 app.put("/updateUser/:id", (req, res) =>{
     const id = req.params.id;
@@ -139,26 +172,26 @@ app.delete('/deleteUser/:id', (req,res) =>{
 //     });
 // })
 
-app.delete('/delete-profile-picture/:fileName', (req, res) => {
-    const fileName = decodeURIComponent(req.params.fileName);
-    const filePath = path.join(__dirname, '..', 'testcrud', 'uploads', 'profile-pictures', fileName);
+// app.delete('/delete-profile-picture/:fileName', (req, res) => {
+//     const fileName = decodeURIComponent(req.params.fileName);
+//     const filePath = path.join(__dirname, '..', 'testcrud', 'uploads', 'profile-pictures', fileName);
   
-    // Check if the file exists before trying to delete it
-    if (fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error('Error deleting the file:', err);
-                res.status(500).json({ error: 'Server error', message: err.message });
-            } else {
-                console.log('File deleted successfully');
-                res.json({ message: 'File deleted successfully' });
-            }
-        });
-    } else {
-        console.error('File does not exist:', filePath);
-        res.status(404).json({ error: 'File not found' });
-    }
-});
+//     // Check if the file exists before trying to delete it
+//     if (fs.existsSync(filePath)) {
+//         fs.unlink(filePath, (err) => {
+//             if (err) {
+//                 console.error('Error deleting the file:', err);
+//                 res.status(500).json({ error: 'Server error', message: err.message });
+//             } else {
+//                 console.log('File deleted successfully');
+//                 res.json({ message: 'File deleted successfully' });
+//             }
+//         });
+//     } else {
+//         console.error('File does not exist:', filePath);
+//         res.status(404).json({ error: 'File not found' });
+//     }
+// });
 
   
 
