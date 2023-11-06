@@ -99,35 +99,50 @@ export default function Users(){
         .catch(err=>console.log(err))
     }
     
-    const genLetter = (id) => {
-        axios({
-            url: 'http://localhost:3001/generateLetter/' + id,
-            method: 'GET',
-            responseType: 'blob', // important
-        })
-        .then((response) => {
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+    const genLetter = (id, name) => {
+        axios.get('http://localhost:3001/generateLetter/'+id, { responseType: 'blob' })
+        .then(result => {
+            console.log(result);
+            const url = window.URL.createObjectURL(new Blob([result.data]));
             const link = document.createElement('a');
             link.href = url;
-    
-            if (response.headers['content-disposition']) {
-                const contentDisposition = response.headers['content-disposition'];
-                console.log('Content-Disposition:', contentDisposition); // Add this line for debugging
-                const filename = contentDisposition.split('filename=')[1];
-                if (filename) {
-                    link.setAttribute('download', filename);
-                } else {
-                    link.setAttribute('download', 'undefined.txt');
-                }
-            } else {
-                link.setAttribute('download', 'undefined.txt');
-            }
-    
+            link.setAttribute('download', `LetterTest_${name}.docx`); // or any other extension
             document.body.appendChild(link);
             link.click();
         })
         .catch(err => console.log(err))
-    }
+    }    
+
+    // letter gen (error)
+    // const genLetter = (id) => {
+    //     axios({
+    //         url: 'http://localhost:3001/generateLetter/' + id,
+    //         method: 'GET',
+    //         responseType: 'blob', // important
+    //     })
+    //     .then((response) => {
+    //         const url = window.URL.createObjectURL(new Blob([response.data]));
+    //         const link = document.createElement('a');
+    //         link.href = url;
+    
+    //         if (response.headers['content-disposition']) {
+    //             const contentDisposition = response.headers['content-disposition'];
+    //             console.log('Content-Disposition:', contentDisposition); // Add this line for debugging
+    //             const filename = contentDisposition.split('filename=')[1];
+    //             if (filename) {
+    //                 link.setAttribute('download', filename);
+    //             } else {
+    //                 link.setAttribute('download', 'undefined.txt');
+    //             }
+    //         } else {
+    //             link.setAttribute('download', 'undefined.txt');
+    //         }
+    
+    //         document.body.appendChild(link);
+    //         link.click();
+    //     })
+    //     .catch(err => console.log(err))
+    // }
 
     const sendMail = (id) => {
         axios.post('http://localhost:3001/send-email/'+id)
@@ -196,8 +211,8 @@ export default function Users(){
                                         <td>
                                             <Link to={`/update/${user._id}`} className='btn btn-success'>Update</Link>
                                             <button className='btn btn-danger' onClick={(e)=>handleDelete(user._id)}>Delete</button>
-                                            <button className='btn btn-success' onClick={(e)=>genLetter(user._id)}>Generate Letter</button>
-                                            <button className='btn btn-success' onClick={(e)=>sendMail(user._id)}>Send Email</button>
+                                            <button className='btn btn-success' onClick={(e)=>genLetter(user._id, user.name)}>Generate Letter</button>
+                                            <button className='btn btn-success' onClick={(e) => sendMail(user._id)}>Send Email</button>
                                         </td>
                                     </tr>
                                 )

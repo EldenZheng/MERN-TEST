@@ -154,16 +154,23 @@ app.get('/generateLetter/:id', async (req, res) => {
         throw error;
     }
 
-    const filename = `Promotion_Letter_${employee.name}.docx`;
+    // const filename = `Promotion_Letter_${employee.name}.docx`;
 
     const buffer = doc.getZip().generate({type: 'nodebuffer'});
 
-    // Set the headers
-    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    //Set Headers
+    res.setHeader('Content-Disposition', 'attachment; filename=' + `Promotion_Letter_${employee.employeeName}_${new Date().toISOString()}.docx`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
-    // Send the file and the filename in the response
-    res.send({ file: buffer, filename: filename });
+    // Send the file in the response
+    res.send(buffer);
+
+    // // Set the headers
+    // res.setHeader('Content-Disposition', 'attachment; filename=' + filename);
+    // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+    // // Send the file and the filename in the response
+    // res.send({ file: buffer, filename: filename });
 });
   
 
