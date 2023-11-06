@@ -61,40 +61,77 @@ export default function Users(){
         }
     };
 
-    const handleUpdate = async () => {
-        if (!file) return;
+    // Update Profile
+    // const handleUpdate = async () => {
+    //     if (!file) return;
 
-        if (profilePicture) {
-            const profilePic = profilePicture;
-            const parts = profilePic.split('/');
-            const filenameWithExtension = parts[parts.length - 1];
-            const fileName =  filenameWithExtension.split('.')[0];
-            try {
-                await axios.delete('http://localhost:3001/delete-profile-picture/'+fileName);
-                console.log('Previous profile picture deleted successfully');
-            } catch (error) {
-                console.error('Error deleting previous profile picture:', error, fileName);
-            }
-        }
+    //     if (profilePicture) {
+    //         const profilePic = profilePicture;
+    //         const parts = profilePic.split('/');
+    //         const filenameWithExtension = parts[parts.length - 1];
+    //         const fileName =  filenameWithExtension.split('.')[0];
+    //         try {
+    //             await axios.delete('http://localhost:3001/delete-profile-picture/'+fileName);
+    //             console.log('Previous profile picture deleted successfully');
+    //         } catch (error) {
+    //             console.error('Error deleting previous profile picture:', error, fileName);
+    //         }
+    //     }
 
-        const formData = new FormData();
-        formData.append('profilePicture', file);
+    //     const formData = new FormData();
+    //     formData.append('profilePicture', file);
 
-        try {
-            await axios.post('http://localhost:3001/upload-profile-picture/'+userData.email, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-            setProfilePicture(URL.createObjectURL(file));
-            alert('Profile picture uploaded successfully');
-        } catch (error) {
-            alert('Profile picture upload failed');
-        }
-      };
+    //     try {
+    //         await axios.post('http://localhost:3001/upload-profile-picture/'+userData.email, formData, {
+    //         headers: { 'Content-Type': 'multipart/form-data' },
+    //     });
+    //         setProfilePicture(URL.createObjectURL(file));
+    //         alert('Profile picture uploaded successfully');
+    //     } catch (error) {
+    //         alert('Profile picture upload failed');
+    //     }
+    // };
 
     const handleDelete = (id) => {
         axios.delete('http://localhost:3001/deleteUser/'+id)
         .then(result=> {console.log(result)
             window.location.reload()})
+        .catch(err=>console.log(err))
+    }
+    
+    const genLetter = (id) => {
+        axios({
+            url: 'http://localhost:3001/generateLetter/' + id,
+            method: 'GET',
+            responseType: 'blob', // important
+        })
+        .then((response) => {
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+    
+            if (response.headers['content-disposition']) {
+                const contentDisposition = response.headers['content-disposition'];
+                console.log('Content-Disposition:', contentDisposition); // Add this line for debugging
+                const filename = contentDisposition.split('filename=')[1];
+                if (filename) {
+                    link.setAttribute('download', filename);
+                } else {
+                    link.setAttribute('download', 'undefined.txt');
+                }
+            } else {
+                link.setAttribute('download', 'undefined.txt');
+            }
+    
+            document.body.appendChild(link);
+            link.click();
+        })
+        .catch(err => console.log(err))
+    }
+
+    const sendMail = (id) => {
+        axios.post('http://localhost:3001/send-email/'+id)
+        .then(result=> console.log(result))
         .catch(err=>console.log(err))
     }
     const logOut = ()=>{
@@ -159,6 +196,8 @@ export default function Users(){
                                         <td>
                                             <Link to={`/update/${user._id}`} className='btn btn-success'>Update</Link>
                                             <button className='btn btn-danger' onClick={(e)=>handleDelete(user._id)}>Delete</button>
+                                            <button className='btn btn-success' onClick={(e)=>genLetter(user._id)}>Generate Letter</button>
+                                            <button className='btn btn-success' onClick={(e)=>sendMail(user._id)}>Send Email</button>
                                         </td>
                                     </tr>
                                 )

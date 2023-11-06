@@ -4,8 +4,11 @@ const cors = require('cors')
 const multer = require('multer')
 const UserModel = require('./models/Users.js')
 const EmployeeModel = require('./models/Employees.js')
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
 const path = require('path')
 const fs = require('fs')
+const nodemailer = require('nodemailer');
 
 const app= express()
 app.use(cors())
@@ -62,7 +65,7 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), (req, r
     }
 });
 
-
+//Update profile (no work)
 // app.post('/update-profile-picture/:id/:profile', upload.single('profilePicture'), (req, res) => {
 //     const userId = req.params.id;
 //     const profilePicturePath = 'uploads/profile-pictures/' + req.file.filename;
@@ -117,7 +120,54 @@ app.get("/getUser/:id", (req, res) =>{
     .catch(err=>res.json(err))
 })
 
-// OLD STORE PATH IN MONGO
+app.get('/generateLetter/:id', async (req, res) => {
+    const empID = req.params.id;
+
+    // Fetch employee details
+    const employee = await userModel.findById({_id: empID});
+    // Load the .docx file as a binary
+    const content = fs.readFileSync(path.resolve('template.docx'), 'binary');
+    const zip = new PizZip(content);
+
+    let doc;
+    try {
+        doc = new Docxtemplater(zip);
+    } catch(error) {
+        console.log('Compilation errors');
+        console.log(error);
+        throw error;
+    }
+
+    // Set the template variables
+    doc.setData({
+        employeeName: employee.name,
+        employeeEmail: employee.email,
+        employeeAge: employee.age
+    });
+
+    try {
+        // Apply the data to the template
+        doc.render();
+    } catch (error) {
+        console.log('Rendering errors');
+        console.log(error);
+        throw error;
+    }
+
+    const filename = `Promotion_Letter_${employee.name}.docx`;
+
+    const buffer = doc.getZip().generate({type: 'nodebuffer'});
+
+    // Set the headers
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+    // Send the file and the filename in the response
+    res.send({ file: buffer, filename: filename });
+});
+  
+
+// OLD GET PATH IN MONGO
 // app.get("/get-profile-picture/:email", (req, res) =>{
 //     const email = req.params.email;
 //     employeeModel.findOne({email:email})
@@ -151,6 +201,54 @@ app.post("/createUser",(req, res) =>{
     .catch(err=>res.json(err))
 })
 
+app.post('/send-email/:id', async (req, res) => {
+    const empID = req.params.id;
+    // Fetch employee details
+    const employee = await userModel.findById({_id: empID});
+    let transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'ez.management.noreply@gmail.com',
+          pass: 'trancajfenmyfpqk'
+        }
+      });
+      
+      let empName = employee.name;
+      let empEmail = employee.email;
+      let empAge = employee.age;
+      
+      let mailOptions = {
+        from: 'ez.management.noreply@gmail.com',
+        to: employee.email,
+        subject: `Leave Approval Email - ${empName}`,
+        html: `
+            Dear ${empName},<br><br>
+            Testing the fetching data from mongoDB. Please find the details below:<br><br>
+            Name: ${empName}<br>
+            Email: ${empEmail}<br>
+            Age: ${empAge}<br><br>
+            If you have any questions or need further assistance, please feel free to contact us.<br><br>
+            Best regards,<br>
+            <br>HR Department<br><br>
+        `
+        // ,
+        // attachments: [
+        //   {
+        //     filename: 'example.docx',
+        //     path: __dirname + '/example.docx'
+        //   }
+        // ]
+      };
+      
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });      
+  });
+
 app.delete('/deleteUser/:id', (req,res) =>{
     const id = req.params.id;
     userModel.findByIdAndDelete({_id:id})
@@ -158,6 +256,7 @@ app.delete('/deleteUser/:id', (req,res) =>{
     .catch(err=>res.json(err))
 })
 
+// Delete picture (no work)
 // app.delete('/delete-profile-picture/:picPath', (req,res) =>{
 //     const picPath = req.params.picPath;
 //     const pathToDelete = path.join(__dirname, 'testcrud', picPath);
@@ -192,8 +291,6 @@ app.delete('/deleteUser/:id', (req,res) =>{
 //         res.status(404).json({ error: 'File not found' });
 //     }
 // });
-
-  
 
 app.listen(3001, ()=>{
     console.log("Server is Running")
