@@ -227,7 +227,7 @@ app.post('/send-email/:id', async (req, res) => {
       let mailOptions = {
         from: 'ez.management.noreply@gmail.com',
         to: employee.email,
-        subject: `Leave Approval Email - ${empName}`,
+        subject: `Email Test - ${empName}`,
         html: `
             Dear ${empName},<br><br>
             Testing the fetching data from mongoDB. Please find the details below:<br><br>
@@ -251,10 +251,11 @@ app.post('/send-email/:id', async (req, res) => {
         if (error) {
           console.log(error);
         } else {
-          console.log('Email sent: ' + info.response);
+          console.log('Email sent: ' + employee.email + info.response);
         }
       });      
   });
+
 
 app.delete('/deleteUser/:id', (req,res) =>{
     const id = req.params.id;
